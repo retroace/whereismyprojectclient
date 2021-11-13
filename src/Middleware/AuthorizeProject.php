@@ -18,7 +18,6 @@ class AuthorizeProject {
     public function handle(Request $request, Closure $next)
     {
         $this->token = $this->getToken();
-        
         if(!$this->isRuntimeAuthorized()) {
             if(!$this->authorizeThisProject()) {
                 // Handle error according to server here
@@ -26,14 +25,19 @@ class AuthorizeProject {
             }
             Cache::store('file')->set('project_authorization_today', true, 86400);
         }
+
         
         $res = $next($request);
-        $token = Cookie::get('project');
-        if(is_null($token)){
-            return $res->withCookie(Cookie::forever('project', $this->token));
-        }
+        
+        $config = config('session');
 
-        return $res;
+        return $res->cookie('project', $this->token, 60 * 60 * 24 * 30, '/', $config['domain'], $config['secure'], false, false, $config['same_site'] ?? null);
+    }
+
+
+    protected function getLastClosingHeadTagPosition($content = '')
+    {
+        return strripos($content, '</head>');
     }
 
 
@@ -67,12 +71,13 @@ class AuthorizeProject {
     {
         $token = Cookie::get('project');
         if(!$token) {
-            $project = Cache::store('file')->get('project');
-            if(!$project) {
+            $token = Cache::store('file')->get('project');
+            if(!$token) {
                 $token = RandomStringGenerator::generateString();
                 Cache::store('file')->forever('project', $token);
             }
         }
+
         return $token;
     }
 }

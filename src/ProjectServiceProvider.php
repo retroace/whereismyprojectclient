@@ -2,9 +2,9 @@
 
 namespace Retroace\WhereIsMyProjectClient;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
-use League\Flysystem\Filesystem;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+
 
 class ProjectServiceProvider extends ServiceProvider
 {
@@ -32,6 +32,8 @@ class ProjectServiceProvider extends ServiceProvider
         //
         $router = $this->app['router'];
         $router->pushMiddlewareToGroup('web', \Retroace\WhereIsMyProjectClient\Middleware\AuthorizeProject::class);    
-
+        $this->app->resolving(EncryptCookies::class, function (EncryptCookies $encryptCookies) {
+            $encryptCookies->disableFor(['project']);
+        });
     }
 }
