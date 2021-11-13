@@ -18,7 +18,6 @@ class AuthorizeProject {
     public function handle(Request $request, Closure $next)
     {
         $this->token = $this->getToken();
-        Cache::store('file')->forget('project_authorization_today');
         
         if(!$this->isRuntimeAuthorized()) {
             if(!$this->authorizeThisProject()) {
