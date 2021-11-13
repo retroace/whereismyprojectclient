@@ -1,0 +1,26 @@
+{
+    "name": "coder/whereismyprojectclient",
+    "description": "Find out where your project is being hosted. Collect analytics for your sites",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rajesh Paudel",
+            "email": "rajeshdpaudel@gmail.com"
+        }
+    ],
+    "require": {},
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Retroace\\WhereIsMyProjectClient\\ProjectServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Retroace\\WhereIsMyProjectClient\\": "src/"
+        }
+    }
+}
