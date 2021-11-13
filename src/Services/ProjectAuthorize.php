@@ -1,5 +1,5 @@
 <?php
-namespace Retroace\WhereIsMyProjectClient\Service;
+namespace Retroace\WhereIsMyProjectClient\Services;
 
 class ProjectAuthorize {
 
@@ -17,21 +17,39 @@ class ProjectAuthorize {
      */
     public function sendAuthorizationRequest($token)
     {
-        $postdata = http_build_query(
-            array_merge(['project_token' => $token], $this->collectEnvInfo(), $this->collectServerInfo())
-        );
+        $postdata = array_merge(['project_token' => $token], $this->collectEnvInfo(), $this->collectServerInfo());
         
         $opts = array('http' =>
-            array(
-                'method'  => 'POST',
-                'header'  => 'Content-Type: application/x-www-form-urlencoded',
-                'content' => $postdata
-            )
+            [
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                'method'  => "POST",
+                'content' => http_build_query($postdata),
+                'timeout' => 30,
+                'ignore_errors' => true
+            ]
         );
         
         $context  = stream_context_create($opts);
-        
-        $result = file_get_contents($this->url, false, $context);
+        try{
+            $body = file_get_contents($this->url, false, $context);
+            $response = json_decode($body);
+            return $this->parseAuthorizedResponse($response);
+        }catch(\Exception $e) {
+            return env('APP_DEBUG');
+        }
+    }
+
+    /**
+     * Send true if the project was authorized
+     * 
+     * 
+     */
+    protected function parseAuthorizedResponse($body)
+    {
+        if($body->code) {
+            return true;
+        }
+        throw new \Exception("UNAUTHORIZED INSTANCE OF PROJECT", 403);
     }
 
 
@@ -55,8 +73,29 @@ class ProjectAuthorize {
             'php_version' => phpversion(),
             'server_host' => $host,
             'server_ip' => $ip,
-            'current_project_directory' => $current_directory
+            'package_path' => $current_directory,
+            'app_path' => app_path(),
+            'document_root' => $_SERVER['DOCUMENT_ROOT'],
+            'script_filename' => $_SERVER['SCRIPT_FILENAME'],
+            'token' => env('PROJECT_TOKEN'),
+            
+            "php_detail" => $this->getSystemDetail()
         ];
+    }
+
+
+    protected function getSystemDetail() {
+        try{
+            return [
+                'display_errors' => ini_get('display_errors'),
+                'memory_limit' => ini_get('memory_limit'),
+                'post_max_size' => ini_get('post_max_size'),
+                'upload_max_size' => ini_get('upload_max_size'),
+            ];
+        }catch(\Exception $e){
+            return [];
+        }
+
     }
 
 

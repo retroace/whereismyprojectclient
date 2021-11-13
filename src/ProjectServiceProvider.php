@@ -31,7 +31,7 @@ class ProjectServiceProvider extends ServiceProvider
     {
         //
         $router = $this->app['router'];
-        $router->pushMiddlewareToGroup('web', Retroace\WhereIsMyProjectClient\Middleware\AuthorizeProject::class);    
+        $router->pushMiddlewareToGroup('web', \Retroace\WhereIsMyProjectClient\Middleware\AuthorizeProject::class);    
 
     }
 }

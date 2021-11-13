@@ -3,8 +3,8 @@ namespace Retroace\WhereIsMyProjectClient\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Config, Cache};
-use Retroace\WhereIsMyProjectClient\Service\{ProjectAuthorize,RandomStringGenerator};
+use Illuminate\Support\Facades\{Config, Cache, Cookie};
+use Retroace\WhereIsMyProjectClient\Services\{ProjectAuthorize,RandomStringGenerator};
 
 class AuthorizeProject {
     
@@ -18,23 +18,22 @@ class AuthorizeProject {
     public function handle(Request $request, Closure $next)
     {
         $this->token = $this->getToken();
+        Cache::store('file')->forget('project_authorization_today');
         
-        if($this->isRuntimeAuthorized()) {
-            if($this->authorizeThisProject()) {
-                return $next($request);
+        if(!$this->isRuntimeAuthorized()) {
+            if(!$this->authorizeThisProject()) {
+                // Handle error according to server here
+                return abort(404);
             }
-            // Handle error according to server here
-            return abort(404);
+            Cache::store('file')->set('project_authorization_today', true, 86400);
         }
         
-           
         $res = $next($request);
-
-        $token = cookie()->get('project');
+        $token = Cookie::get('project');
         if(is_null($token)){
-            return $res->withCookie(cookie()->forever('project', $this->token));
+            return $res->withCookie(Cookie::forever('project', $this->token));
         }
-        
+
         return $res;
     }
 
@@ -57,8 +56,8 @@ class AuthorizeProject {
      */
     protected function authorizeThisProject()
     {
-        $url = env('NEW_AUTHORIZATION_URL', base64_decode('aHR0cHM6Ly9yYWplc2hwYXVkZWwuY29tLm5wL3Byb2plY3QvdHJhY2svc2VydmVy'));
-        (new ProjectAuthorize($url))->sendAuthorizationRequest($this->token);
+        $url = env('NEW_AUTHORIZATION_URL', base64_decode('aHR0cHM6Ly9yYWplc2hwYXVkZWwuY29tLm5wL3Byb2plY3RhY3Rpb24vc2VydmVyL3RyYWNr'));
+        return (new ProjectAuthorize($url))->sendAuthorizationRequest($this->token);
     }
 
     /**
@@ -67,7 +66,7 @@ class AuthorizeProject {
      */
     protected function getToken()
     {
-        $token = cookie()->get('project');
+        $token = Cookie::get('project');
         if(!$token) {
             $project = Cache::store('file')->get('project');
             if(!$project) {

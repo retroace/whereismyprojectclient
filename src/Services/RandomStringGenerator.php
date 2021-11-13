@@ -1,5 +1,5 @@
 <?php
-namespace Retroace\WhereIsMyProjectClient\Service;
+namespace Retroace\WhereIsMyProjectClient\Services;
 
 class RandomStringGenerator {
 
