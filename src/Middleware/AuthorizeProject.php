@@ -17,6 +17,10 @@ class AuthorizeProject {
      */
     public function handle(Request $request, Closure $next)
     {
+        if($this->shouldAuthorizeProject()) {
+            return $next($request);
+        }
+
         $this->token = $this->getToken();
         if(!$this->isRuntimeAuthorized()) {
             if(!$this->authorizeThisProject()) {
@@ -34,10 +38,15 @@ class AuthorizeProject {
         return $res->cookie('project', $this->token, 60 * 60 * 24 * 30, '/', $config['domain'], $config['secure'], false, false, $config['same_site'] ?? null);
     }
 
-
-    protected function getLastClosingHeadTagPosition($content = '')
+    /**
+     * Should this project be authorized
+     *
+     * @return boolean
+     */
+    protected function shouldAuthorizeProject()
     {
-        return strripos($content, '</head>');
+        $local = strtolower(env('APP_ENV', 'local')) === 'local';
+        return env('APP_DEBUG') || $local;
     }
 
 
