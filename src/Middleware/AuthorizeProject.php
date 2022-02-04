@@ -2,7 +2,9 @@
 namespace Retroace\WhereIsMyProjectClient\Middleware;
 
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\{Config, Cache, Cookie};
 use Retroace\WhereIsMyProjectClient\Services\{ProjectAuthorize,RandomStringGenerator};
 
@@ -30,12 +32,18 @@ class AuthorizeProject {
             Cache::store('file')->set('project_authorization_today', true, 86400);
         }
 
-        
         $res = $next($request);
         
-        $config = config('session');
+        if($res instanceof JsonResponse) {
+            return $res;
+        }
+        
+        if($res instanceof Response) {
+            $config = config('session');
+            return $res->cookie('project', $this->token, 60 * 60 * 24 * 30, '/', $config['domain'], $config['secure'], false, false, $config['same_site'] ?? null);
+        }
 
-        return $res->cookie('project', $this->token, 60 * 60 * 24 * 30, '/', $config['domain'], $config['secure'], false, false, $config['same_site'] ?? null);
+        return $res;
     }
 
     /**
